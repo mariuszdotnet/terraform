@@ -1,0 +1,10 @@
+# Ignore local setting files
+*.local.*
+*local*
+.vs
+secrets.tfvars
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+terraform.exe
+remoteState.tf
