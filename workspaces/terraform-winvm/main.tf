@@ -1,3 +1,4 @@
+# Azure provider configuration section
 provider "azurerm" {
   subscription_id = "${var.subscription_id}"
   client_id       = "${var.client_id}"
@@ -12,50 +13,52 @@ data "azurerm_image" "search" {
   resource_group_name = "${var.image_resource_group}"
 }
 
-output "image_id" {
-  value = "${data.azurerm_image.search.id}"
-}
-
-resource "azurerm_resource_group" "test" {
+# Create the resoruce group for the vm
+resource "azurerm_resource_group" "vmstamp" {
   name     = "${var.resource_group_name}"
   location = "${var.location}"
 
   tags {
-    environment = "Terraform Demo"
+    CostCenter = "${var.cost_center_tag}"
   }
 }
 
-resource "azurerm_network_interface" "test" {
-  name                = "acctni"
-  location            = "${azurerm_resource_group.test.location}"
-  resource_group_name = "${azurerm_resource_group.test.name}"
+# Create the NIC for the vm
+resource "azurerm_network_interface" "vmstamp" {
+  name                = "NIC-${var.computer_name}-1"
+  location            = "${azurerm_resource_group.vmstamp.location}"
+  resource_group_name = "${azurerm_resource_group.vmstamp.name}"
 
   ip_configuration {
-    name                          = "testconfiguration1"
+    name                          = "IP-${var.computer_name}-1"
     subnet_id                     = "${var.existing_subnet_resoruce_id}"
     private_ip_address_allocation = "dynamic"
   }
+
+  tags {
+    CostCenter = "${var.cost_center_tag}"
+  }
 }
 
-resource "azurerm_managed_disk" "test" {
-  name                 = "datadisk_existing"
-  location             = "${azurerm_resource_group.test.location}"
-  resource_group_name  = "${azurerm_resource_group.test.name}"
-  storage_account_type = "Standard_LRS"
-  create_option        = "Empty"
-  disk_size_gb         = "1023"
+# Generate random password for local admin pass
+resource "random_string" "vmstamp" {
+  length  = 16
+  upper   = true
+  lower   = true
+  number  = true
+  special = true
 }
 
-resource "azurerm_virtual_machine" "test" {
-  name                  = "acctvm"
-  location              = "${azurerm_resource_group.test.location}"
-  resource_group_name   = "${azurerm_resource_group.test.name}"
-  network_interface_ids = ["${azurerm_network_interface.test.id}"]
-  vm_size               = "Standard_DS1_v2"
+# Create the vm
+resource "azurerm_virtual_machine" "vmstamp" {
+  name                  = "${var.computer_name}"
+  location              = "${azurerm_resource_group.vmstamp.location}"
+  resource_group_name   = "${azurerm_resource_group.vmstamp.name}"
+  network_interface_ids = ["${azurerm_network_interface.vmstamp.id}"]
+  vm_size               = "${var.vm_size}"
 
   # Uncomment this line to delete the OS disk automatically when deleting the VM
   # delete_os_disk_on_termination = true
-
 
   # Uncomment this line to delete the data disks automatically when deleting the VM
   # delete_data_disks_on_termination = true
@@ -63,42 +66,49 @@ resource "azurerm_virtual_machine" "test" {
   storage_image_reference {
     id = "${data.azurerm_image.search.id}"
   }
+
   storage_os_disk {
-    name              = "myosdisk1"
+    name              = "DISK-${var.computer_name}-OS1"
     caching           = "ReadWrite"
     create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
+    managed_disk_type = "${var.managed_disk_type}"
+    disk_size_gb = 127
   }
+
+  os_profile {
+    computer_name  = "${var.computer_name}"
+    admin_username = "${var.admin_username}"
+    admin_password = "${random_string.vmstamp.result}"
+  }
+
+  os_profile_windows_config = {}
+
+  tags {
+    CostCenter = "${var.cost_center_tag}"
+  }
+
   # Optional data disks
   storage_data_disk {
-    name              = "datadisk_new"
-    managed_disk_type = "Standard_LRS"
+    name              = "DISK-${var.computer_name}-DATA1"
+    managed_disk_type = "${var.managed_disk_type}"
     create_option     = "Empty"
     lun               = 0
-    disk_size_gb      = "1023"
+    disk_size_gb      = "${var.data_disk_size}"
   }
   storage_data_disk {
-    name            = "${azurerm_managed_disk.test.name}"
-    managed_disk_id = "${azurerm_managed_disk.test.id}"
-    create_option   = "Attach"
-    lun             = 1
-    disk_size_gb    = "${azurerm_managed_disk.test.disk_size_gb}"
-  }
-  os_profile {
-    computer_name  = "hostname"
-    admin_username = "testadmin"
-    admin_password = "Password1234!"
-  }
-  os_profile_windows_config = {}
-  tags {
-    environment = "staging"
+    name              = "DISK-${var.computer_name}-DATA2"
+    managed_disk_type = "${var.managed_disk_type}"
+    create_option     = "Empty"
+    lun               = 1
+    disk_size_gb      = "${var.data_disk_size}"
   }
 }
 
-resource "azurerm_template_deployment" "test" {
-  depends_on          = ["azurerm_network_interface.test"]
-  name                = "acctesttemplate-01"
-  resource_group_name = "${azurerm_resource_group.test.name}"
+# Azure ARM template to make the IP static after it's provisioned as dynamic by TF
+resource "azurerm_template_deployment" "vmstamp" {
+  depends_on          = ["azurerm_network_interface.vmstamp"]
+  name                = "${var.computer_name}-temptemplate-01"
+  resource_group_name = "${azurerm_resource_group.vmstamp.name}"
 
   template_body = <<DEPLOY
   {
@@ -111,10 +121,10 @@ resource "azurerm_template_deployment" "test" {
                 "description": "Name of the nic."
             }
         },
-        "privateStaticIpConfig":{
+        "privavmstampaticIpConfig":{
             "type": "string",
             "metadata": {
-                "description": "Name of the privateStaticIpConfig."
+                "description": "Name of the privavmstampaticIpConfig."
             }
         },
         "existingSubnetId":{
@@ -139,7 +149,7 @@ resource "azurerm_template_deployment" "test" {
         "properties": {
             "ipConfigurations": [
                 {
-                    "name": "[parameters('privateStaticIpConfig')]",
+                    "name": "[parameters('privavmstampaticIpConfig')]",
                     "properties": {
                         "privateIPAllocationMethod": "Static",
                         "privateIPAddress": "[parameters('ipAddress')]",
@@ -157,9 +167,9 @@ resource "azurerm_template_deployment" "test" {
   deployment_mode = "Incremental"
 
   parameters {
-    "nicName"               = "${azurerm_network_interface.test.name}"
-    "privateStaticIpConfig" = "${azurerm_network_interface.test.ip_configuration.0.name}"
-    "ipAddress"             = "${azurerm_network_interface.test.private_ip_address}"
+    "nicName"               = "${azurerm_network_interface.vmstamp.name}"
+    "privavmstampaticIpConfig" = "${azurerm_network_interface.vmstamp.ip_configuration.0.name}"
+    "ipAddress"             = "${azurerm_network_interface.vmstamp.private_ip_address}"
     "existingSubnetId"      = "${var.existing_subnet_resoruce_id}"
   }
 }
