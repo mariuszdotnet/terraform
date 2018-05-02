@@ -46,7 +46,7 @@ variable "computer_name" {
 
 variable "admin_username" {
   description = "The local admin user name"
-  default     = "adazadmin"
+  default     = "azadmin"
 }
 
 variable "vm_size" {

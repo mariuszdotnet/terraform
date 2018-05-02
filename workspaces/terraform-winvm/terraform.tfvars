@@ -15,12 +15,12 @@ resource_group_name = "terraform-rg"
 
 # Required Tags
 tags = {
-  CostCenter = "12345678"
-  UseCase    = "Test Server"
+  CostCenter = "123"
+  UseCase    = "Test Server 2"
 }
 
 # <= 15 charaters
-computer_name = "AZWAPPRD2"
+computer_name = "AZWAPPRD3"
 
 # Supported VM Family Sizes: Standard_F1s, Standard_E2s_v3, Standard_E4s_v3, Standard_E8s_v3, Standard_E16s_v3
 

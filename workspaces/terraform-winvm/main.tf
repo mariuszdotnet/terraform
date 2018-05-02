@@ -68,7 +68,7 @@ resource "azurerm_virtual_machine" "vmstamp" {
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "${var.managed_disk_type}"
-    disk_size_gb      = 127
+    disk_size_gb      = 128
   }
   os_profile {
     computer_name  = "${var.computer_name}"
