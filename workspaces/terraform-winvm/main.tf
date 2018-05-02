@@ -18,9 +18,7 @@ resource "azurerm_resource_group" "vmstamp" {
   name     = "${var.resource_group_name}"
   location = "${var.location}"
 
-  tags {
-    CostCenter = "${var.cost_center_tag}"
-  }
+  tags = "${var.tags}"
 }
 
 # Create the NIC for the vm
@@ -29,14 +27,12 @@ resource "azurerm_network_interface" "vmstamp" {
   location            = "${azurerm_resource_group.vmstamp.location}"
   resource_group_name = "${azurerm_resource_group.vmstamp.name}"
 
+  tags = "${var.tags}"
+
   ip_configuration {
     name                          = "IP-${var.computer_name}-1"
     subnet_id                     = "${var.existing_subnet_resoruce_id}"
     private_ip_address_allocation = "dynamic"
-  }
-
-  tags {
-    CostCenter = "${var.cost_center_tag}"
   }
 }
 
@@ -60,46 +56,36 @@ resource "azurerm_virtual_machine" "vmstamp" {
   # Uncomment this line to delete the OS disk automatically when deleting the VM
   # delete_os_disk_on_termination = true
 
+
   # Uncomment this line to delete the data disks automatically when deleting the VM
   # delete_data_disks_on_termination = true
 
   storage_image_reference {
     id = "${data.azurerm_image.search.id}"
   }
-
   storage_os_disk {
     name              = "DISK-${var.computer_name}-OS1"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "${var.managed_disk_type}"
-    disk_size_gb = 127
+    disk_size_gb      = 127
   }
-
   os_profile {
     computer_name  = "${var.computer_name}"
     admin_username = "${var.admin_username}"
     admin_password = "${random_string.vmstamp.result}"
   }
-
   os_profile_windows_config = {}
+  tags                      = "${var.tags}"
 
-  tags {
-    CostCenter = "${var.cost_center_tag}"
-  }
+  #CostCenter = "${var.cost_center_tag}"
 
-  # Optional data disks
+  # Data disks
   storage_data_disk {
     name              = "DISK-${var.computer_name}-DATA1"
     managed_disk_type = "${var.managed_disk_type}"
     create_option     = "Empty"
     lun               = 0
-    disk_size_gb      = "${var.data_disk_size}"
-  }
-  storage_data_disk {
-    name              = "DISK-${var.computer_name}-DATA2"
-    managed_disk_type = "${var.managed_disk_type}"
-    create_option     = "Empty"
-    lun               = 1
     disk_size_gb      = "${var.data_disk_size}"
   }
 }
@@ -167,9 +153,9 @@ resource "azurerm_template_deployment" "vmstamp" {
   deployment_mode = "Incremental"
 
   parameters {
-    "nicName"               = "${azurerm_network_interface.vmstamp.name}"
+    "nicName"                  = "${azurerm_network_interface.vmstamp.name}"
     "privavmstampaticIpConfig" = "${azurerm_network_interface.vmstamp.ip_configuration.0.name}"
-    "ipAddress"             = "${azurerm_network_interface.vmstamp.private_ip_address}"
-    "existingSubnetId"      = "${var.existing_subnet_resoruce_id}"
+    "ipAddress"                = "${azurerm_network_interface.vmstamp.private_ip_address}"
+    "existingSubnetId"         = "${var.existing_subnet_resoruce_id}"
   }
 }

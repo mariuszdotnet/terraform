@@ -36,8 +36,8 @@ variable "image_resource_group" {
   description = "The name of the Resource Group where the Golden Image is located."
 }
 
-variable "cost_center_tag" {
-  description = "The cost center for all resoruces created by this TF file"
+variable "tags" {
+  type = "map"
 }
 
 variable "computer_name" {
@@ -46,7 +46,7 @@ variable "computer_name" {
 
 variable "admin_username" {
   description = "The local admin user name"
-  default = "adazadmin"
+  default     = "adazadmin"
 }
 
 variable "vm_size" {
@@ -55,10 +55,10 @@ variable "vm_size" {
 
 variable "managed_disk_type" {
   description = "Type of managed disk for os and storage disks"
-  default = "Standard_LRS"
+  default     = "Standard_LRS"
 }
 
 variable "data_disk_size" {
   description = "size of data disk/s to create"
-  default = "1023"
+  default     = "1023"
 }
