@@ -4,13 +4,20 @@ provider "azurerm" {
   client_id       = "${var.client_id}"
   client_secret   = "${var.client_secret}"
   tenant_id       = "${var.tenant_id}"
-  version         = "1.3"
+  version         = "1.23.0"
 }
 
 # Locate the existing custom/golden image
-data "azurerm_image" "search" {
-  name                = "${var.image_name}"
-  resource_group_name = "${var.image_resource_group}"
+#data "azurerm_image" "search" {
+#  name                = "${var.image_name}"
+#  resource_group_name = "${var.image_resource_group}"
+#}
+
+data "azurerm_shared_image_version" "vmstamp" {
+  name                = "1.0.0"
+  image_name          = "myUbuntuImageDefinition"
+  gallery_name        = "myGallery"
+  resource_group_name = "shared-image-gallery-rg"
 }
 
 # Create the resoruce group for the vm
@@ -61,7 +68,8 @@ resource "azurerm_virtual_machine" "vmstamp" {
   # delete_data_disks_on_termination = true
 
   storage_image_reference {
-    id = "${data.azurerm_image.search.id}"
+    id = "${data.azurerm_shared_image_version.vmstamp.id}"
+    #id = "/subscriptions/5aec60e9-f535-4bd7-a951-2833f043e918/resourceGroups/shared-image-gallery-rg/providers/Microsoft.Compute/galleries/myGallery/images/myUbuntuImageDefinition/versions/1.0.0"
   }
   storage_os_disk {
     name              = "DISK-${var.computer_name}-OS1"

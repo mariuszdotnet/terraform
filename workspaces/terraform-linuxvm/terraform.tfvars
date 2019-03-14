@@ -5,10 +5,10 @@ existing_subnet_resoruce_id = "/subscriptions/5aec60e9-f535-4bd7-a951-2833f043e9
 image_name = "RedHat7-linux-20180502-2"
 
 # Name of the resource group where for the image
-image_resource_group = "packer-image-repo-rg"
+image_resource_group = "shared-image-gallery-rg"
 
 # Location for the VM
-location = "east us 2"
+location = "Canada Central"
 
 # Name of the resource group for the VM
 resource_group_name = "terraform-ubuntu-rg"
