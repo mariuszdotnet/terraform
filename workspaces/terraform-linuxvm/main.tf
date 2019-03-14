@@ -7,12 +7,6 @@ provider "azurerm" {
   version         = "1.23.0"
 }
 
-# Locate the existing custom/golden image
-#data "azurerm_image" "search" {
-#  name                = "${var.image_name}"
-#  resource_group_name = "${var.image_resource_group}"
-#}
-
 data "azurerm_shared_image_version" "vmstamp" {
   name                = "1.0.0"
   image_name          = "myUbuntuImageDefinition"
@@ -69,7 +63,6 @@ resource "azurerm_virtual_machine" "vmstamp" {
 
   storage_image_reference {
     id = "${data.azurerm_shared_image_version.vmstamp.id}"
-    #id = "/subscriptions/5aec60e9-f535-4bd7-a951-2833f043e918/resourceGroups/shared-image-gallery-rg/providers/Microsoft.Compute/galleries/myGallery/images/myUbuntuImageDefinition/versions/1.0.0"
   }
   storage_os_disk {
     name              = "DISK-${var.computer_name}-OS1"
