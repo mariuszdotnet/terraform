@@ -134,6 +134,12 @@ resource "azurerm_template_deployment" "vmstamp" {
             "metadata": {
                 "description": "IP address to be set static."
             }
+        },
+        "publicIPAddressId":{
+            "type": "string",
+            "metadata": {
+                "description": "Public IP address."
+            }
         }
     },
     "resources": [
@@ -151,7 +157,7 @@ resource "azurerm_template_deployment" "vmstamp" {
                         "privateIPAddress": "[parameters('ipAddress')]",
                         "subnet": {
                             "id": "[parameters('existingSubnetId')]"
-                        }
+                        },
                         "publicIPAddress": {
                             "id": "[parameters('publicIPAddressId')]"
                         }
