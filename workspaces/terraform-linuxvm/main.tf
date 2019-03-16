@@ -1,17 +1,18 @@
 # Azure provider configuration section
 provider "azurerm" {
+  version = "~> 1.23"
   subscription_id = "${var.subscription_id}"
   client_id       = "${var.client_id}"
   client_secret   = "${var.client_secret}"
   tenant_id       = "${var.tenant_id}"
-  version         = "1.23.0"
 }
 
+# Reference Azure SIG image
 data "azurerm_shared_image_version" "vmstamp" {
-  name                = "1.0.0"
-  image_name          = "myUbuntuImageDefinition"
-  gallery_name        = "myGallery"
-  resource_group_name = "shared-image-gallery-rg"
+  name                = "${var.sig_image_version}"
+  image_name          = "${var.sig_image_name}"
+  gallery_name        = "${var.sig_gallery_name}"
+  resource_group_name = "${var.sig_resource_group_name}"
 }
 
 # Create the resoruce group for the vm
@@ -22,18 +23,28 @@ resource "azurerm_resource_group" "vmstamp" {
   tags = "${var.tags}"
 }
 
-# Create the NIC for the vm
-resource "azurerm_network_interface" "vmstamp" {
-  name                = "NIC-${var.computer_name}-1"
+#Create the public IP for the vm
+resource "azurerm_public_ip" "vmstamp" {
+  name                = "ip-${var.computer_name}-2"
   location            = "${azurerm_resource_group.vmstamp.location}"
   resource_group_name = "${azurerm_resource_group.vmstamp.name}"
+  allocation_method   = "Dynamic"
 
+  tags = "${var.tags}"
+}
+
+# Create the NIC for the vm
+resource "azurerm_network_interface" "vmstamp" {
+  name                = "nic-${var.computer_name}-1"
+  location            = "${azurerm_resource_group.vmstamp.location}"
+  resource_group_name = "${azurerm_resource_group.vmstamp.name}"
   tags = "${var.tags}"
 
   ip_configuration {
-    name                          = "IP-${var.computer_name}-1"
+    name                          = "ip-${var.computer_name}-1"
     subnet_id                     = "${var.existing_subnet_resoruce_id}"
     private_ip_address_allocation = "dynamic"
+    public_ip_address_id          = "${azurerm_public_ip.vmstamp.id}"
   }
 }
 
@@ -57,7 +68,6 @@ resource "azurerm_virtual_machine" "vmstamp" {
   # Uncomment this line to delete the OS disk automatically when deleting the VM
   # delete_os_disk_on_termination = true
 
-
   # Uncomment this line to delete the data disks automatically when deleting the VM
   # delete_data_disks_on_termination = true
 
@@ -65,7 +75,7 @@ resource "azurerm_virtual_machine" "vmstamp" {
     id = "${data.azurerm_shared_image_version.vmstamp.id}"
   }
   storage_os_disk {
-    name              = "DISK-${var.computer_name}-OS1"
+    name              = "disk-${var.computer_name}-os1"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "${var.managed_disk_type}"
@@ -82,7 +92,7 @@ resource "azurerm_virtual_machine" "vmstamp" {
   tags = "${var.tags}"
   # Data disks
   storage_data_disk {
-    name              = "DISK-${var.computer_name}-DATA1"
+    name              = "disk-${var.computer_name}-data1"
     managed_disk_type = "${var.managed_disk_type}"
     create_option     = "Empty"
     lun               = 0

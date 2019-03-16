@@ -28,10 +28,6 @@ variable "resource_group_name" {
   description = "The  resource group to deploy the VM into."
 }
 
-variable "image_name" {
-  description = "The name of the existing Golden Image"
-}
-
 variable "image_resource_group" {
   description = "The name of the Resource Group where the Golden Image is located."
 }
@@ -62,3 +58,19 @@ variable "data_disk_size" {
   description = "size of data disk/s to create"
   default     = "1023"
 }
+
+variable "sig_image_version" {
+  description = "Image version"
+}
+
+variable "sig_image_name" {
+  description = "Image name"
+} 
+
+variable "sig_gallery_name" {
+  description = "Shared image gallery name"
+} 
+
+variable "sig_resource_group_name" {
+  description = "share image gallery resource group"
+} 
