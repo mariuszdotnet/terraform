@@ -151,7 +151,10 @@ resource "azurerm_template_deployment" "vmstamp" {
                         "privateIPAddress": "[parameters('ipAddress')]",
                         "subnet": {
                             "id": "[parameters('existingSubnetId')]"
-                          }
+                        }
+                        "publicIPAddress": {
+                            "id": "[parameters('publicIPAddressId')]"
+                        }
                     }
                 }
             ]
@@ -167,5 +170,6 @@ resource "azurerm_template_deployment" "vmstamp" {
     "privavmstampaticIpConfig" = "${azurerm_network_interface.vmstamp.ip_configuration.0.name}"
     "ipAddress"                = "${azurerm_network_interface.vmstamp.private_ip_address}"
     "existingSubnetId"         = "${var.existing_subnet_resoruce_id}"
+    "publicIPAddressId"        = "${azurerm_public_ip.vmstamp.id}"
   }
 }
