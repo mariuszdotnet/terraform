@@ -1,6 +1,6 @@
 # Azure provider configuration section
 provider "azurerm" {
-  version = "~> 1.23"
+  #version = "~> 1.23"
   subscription_id = "${var.subscription_id}"
   client_id       = "${var.client_id}"
   client_secret   = "${var.client_secret}"
@@ -13,6 +13,12 @@ data "azurerm_shared_image_version" "vmstamp" {
   image_name          = "${var.sig_image_name}"
   gallery_name        = "${var.sig_gallery_name}"
   resource_group_name = "${var.sig_resource_group_name}"
+}
+
+data "azurerm_recovery_services_protection_policy_vm" "vmstamp" {
+  name                = "DefaultPolicy"
+  recovery_vault_name = "mk-vm-vault"
+  resource_group_name = "backup-vault-rg"
 }
 
 # Create the resoruce group for the vm
@@ -87,7 +93,9 @@ resource "azurerm_virtual_machine" "vmstamp" {
     admin_password = "${random_string.vmstamp.result}"
   }
 
-  os_profile_windows_config = {}
+  os_profile_windows_config = {
+    provision_vm_agent = true
+  }
   
   tags = "${var.tags}"
   # Data disks
@@ -99,6 +107,15 @@ resource "azurerm_virtual_machine" "vmstamp" {
     disk_size_gb      = "${var.data_disk_size}"
   }
 }
+
+resource "azurerm_recovery_services_protected_vm" "vmstamp" {
+  resource_group_name = "${data.azurerm_recovery_services_protection_policy_vm.vmstamp.resource_group_name}"
+  recovery_vault_name = "${data.azurerm_recovery_services_protection_policy_vm.vmstamp.recovery_vault_name}"
+  # Bug in data.azurerm_recovery_services_protection_policy_vm.id returns sub with upper case, use lower() to make it work
+  backup_policy_id    = "${lower(data.azurerm_recovery_services_protection_policy_vm.vmstamp.id)}"
+  source_vm_id        = "${azurerm_virtual_machine.vmstamp.id}"
+}
+
 
 # Azure ARM template to make the IP static after it's provisioned as dynamic by TF
 resource "azurerm_template_deployment" "vmstamp" {
